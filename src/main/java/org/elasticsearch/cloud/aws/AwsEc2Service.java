@@ -19,12 +19,6 @@
 
 package org.elasticsearch.cloud.aws;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
-import com.amazonaws.auth.*;
-import com.amazonaws.internal.StaticCredentialsProvider;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2Client;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchIllegalArgumentException;
 import org.elasticsearch.cloud.aws.network.Ec2NameResolver;
@@ -35,6 +29,16 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
+
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSCredentialsProviderChain;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.internal.StaticCredentialsProvider;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2Client;
 
 /**
  *
@@ -63,9 +67,11 @@ public class AwsEc2Service extends AbstractLifecycleComponent<AwsEc2Service> {
         String protocol = componentSettings.get("protocol", "http").toLowerCase();
         if ("http".equals(protocol)) {
             clientConfiguration.setProtocol(Protocol.HTTP);
-        } else if ("https".equals(protocol)) {
+        }
+        else if ("https".equals(protocol)) {
             clientConfiguration.setProtocol(Protocol.HTTPS);
-        } else {
+        }
+        else {
             throw new ElasticsearchIllegalArgumentException("No protocol supported [" + protocol + "], can either be [http] or [https]");
         }
         String account = componentSettings.get("access_key", settings.get("cloud.account"));
@@ -77,7 +83,8 @@ public class AwsEc2Service extends AbstractLifecycleComponent<AwsEc2Service> {
             Integer proxyPort;
             try {
                 proxyPort = Integer.parseInt(portString, 10);
-            } catch (NumberFormatException ex) {
+            }
+            catch (NumberFormatException ex) {
                 throw new ElasticsearchIllegalArgumentException("The configured proxy port value [" + portString + "] is invalid", ex);
             }
             clientConfiguration.withProxyHost(proxyHost).setProxyPort(proxyPort);
@@ -86,15 +93,15 @@ public class AwsEc2Service extends AbstractLifecycleComponent<AwsEc2Service> {
         AWSCredentialsProvider credentials;
 
         if (account == null && key == null) {
-            credentials = new AWSCredentialsProviderChain(
-                    new EnvironmentVariableCredentialsProvider(),
-                    new SystemPropertiesCredentialsProvider(),
-                    new InstanceProfileCredentialsProvider()
-            );
-        } else {
-            credentials = new AWSCredentialsProviderChain(
-                    new StaticCredentialsProvider(new BasicAWSCredentials(account, key))
-            );
+            credentials = new DefaultAWSCredentialsProviderChain();
+            //            credentials = new AWSCredentialsProviderChain(
+            //                    new EnvironmentVariableCredentialsProvider(),
+            //                    new SystemPropertiesCredentialsProvider(),
+            //                    new InstanceProfileCredentialsProvider()
+            //            );
+        }
+        else {
+            credentials = new AWSCredentialsProviderChain(new StaticCredentialsProvider(new BasicAWSCredentials(account, key)));
         }
 
         this.client = new AmazonEC2Client(credentials, clientConfiguration);
@@ -103,26 +110,35 @@ public class AwsEc2Service extends AbstractLifecycleComponent<AwsEc2Service> {
             String endpoint = componentSettings.get("ec2.endpoint");
             logger.debug("using explicit ec2 endpoint [{}]", endpoint);
             client.setEndpoint(endpoint);
-        } else if (componentSettings.get("region") != null) {
+        }
+        else if (componentSettings.get("region") != null) {
             String region = componentSettings.get("region").toLowerCase();
             String endpoint;
             if (region.equals("us-east-1") || region.equals("us-east")) {
                 endpoint = "ec2.us-east-1.amazonaws.com";
-            } else if (region.equals("us-west") || region.equals("us-west-1")) {
+            }
+            else if (region.equals("us-west") || region.equals("us-west-1")) {
                 endpoint = "ec2.us-west-1.amazonaws.com";
-            } else if (region.equals("us-west-2")) {
+            }
+            else if (region.equals("us-west-2")) {
                 endpoint = "ec2.us-west-2.amazonaws.com";
-            } else if (region.equals("ap-southeast") || region.equals("ap-southeast-1")) {
+            }
+            else if (region.equals("ap-southeast") || region.equals("ap-southeast-1")) {
                 endpoint = "ec2.ap-southeast-1.amazonaws.com";
-            } else if (region.equals("ap-southeast-2")) {
+            }
+            else if (region.equals("ap-southeast-2")) {
                 endpoint = "ec2.ap-southeast-2.amazonaws.com";
-            } else if (region.equals("ap-northeast") || region.equals("ap-northeast-1")) {
+            }
+            else if (region.equals("ap-northeast") || region.equals("ap-northeast-1")) {
                 endpoint = "ec2.ap-northeast-1.amazonaws.com";
-            } else if (region.equals("eu-west") || region.equals("eu-west-1")) {
+            }
+            else if (region.equals("eu-west") || region.equals("eu-west-1")) {
                 endpoint = "ec2.eu-west-1.amazonaws.com";
-            } else if (region.equals("sa-east") || region.equals("sa-east-1")) {
+            }
+            else if (region.equals("sa-east") || region.equals("sa-east-1")) {
                 endpoint = "ec2.sa-east-1.amazonaws.com";
-            } else {
+            }
+            else {
                 throw new ElasticsearchIllegalArgumentException("No automatic endpoint could be derived from region [" + region + "]");
             }
             if (endpoint != null) {
@@ -136,12 +152,10 @@ public class AwsEc2Service extends AbstractLifecycleComponent<AwsEc2Service> {
     }
 
     @Override
-    protected void doStart() throws ElasticsearchException {
-    }
+    protected void doStart() throws ElasticsearchException {}
 
     @Override
-    protected void doStop() throws ElasticsearchException {
-    }
+    protected void doStop() throws ElasticsearchException {}
 
     @Override
     protected void doClose() throws ElasticsearchException {

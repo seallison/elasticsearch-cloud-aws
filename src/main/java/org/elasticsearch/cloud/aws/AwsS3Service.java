@@ -22,12 +22,6 @@ package org.elasticsearch.cloud.aws;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
-import com.amazonaws.auth.*;
-import com.amazonaws.internal.StaticCredentialsProvider;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchIllegalArgumentException;
 import org.elasticsearch.common.collect.Tuple;
@@ -35,6 +29,16 @@ import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
+
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSCredentialsProviderChain;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.internal.StaticCredentialsProvider;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 
 /**
  *
@@ -44,7 +48,7 @@ public class AwsS3Service extends AbstractLifecycleComponent<AwsS3Service> {
     /**
      * (acceskey, endpoint) -> client
      */
-    private Map<Tuple<String, String>, AmazonS3Client> clients = new HashMap<Tuple<String,String>, AmazonS3Client>();
+    private Map<Tuple<String, String>, AmazonS3Client> clients = new HashMap<Tuple<String, String>, AmazonS3Client>();
 
     @Inject
     public AwsS3Service(Settings settings, SettingsFilter settingsFilter) {
@@ -65,7 +69,8 @@ public class AwsS3Service extends AbstractLifecycleComponent<AwsS3Service> {
         String endpoint;
         if (region == null) {
             endpoint = getDefaultEndpoint();
-        } else {
+        }
+        else {
             endpoint = getEndpoint(region);
             logger.debug("using s3 region [{}], with endpoint [{}]", region, endpoint);
         }
@@ -76,7 +81,6 @@ public class AwsS3Service extends AbstractLifecycleComponent<AwsS3Service> {
 
         return getClient(endpoint, account, key);
     }
-
 
     private synchronized AmazonS3 getClient(String endpoint, String account, String key) {
         Tuple<String, String> clientDescriptor = new Tuple<String, String>(endpoint, account);
@@ -89,9 +93,11 @@ public class AwsS3Service extends AbstractLifecycleComponent<AwsS3Service> {
         String protocol = componentSettings.get("protocol", "http").toLowerCase();
         if ("http".equals(protocol)) {
             clientConfiguration.setProtocol(Protocol.HTTP);
-        } else if ("https".equals(protocol)) {
+        }
+        else if ("https".equals(protocol)) {
             clientConfiguration.setProtocol(Protocol.HTTPS);
-        } else {
+        }
+        else {
             throw new ElasticsearchIllegalArgumentException("No protocol supported [" + protocol + "], can either be [http] or [https]");
         }
 
@@ -101,7 +107,8 @@ public class AwsS3Service extends AbstractLifecycleComponent<AwsS3Service> {
             Integer proxyPort;
             try {
                 proxyPort = Integer.parseInt(portString, 10);
-            } catch (NumberFormatException ex) {
+            }
+            catch (NumberFormatException ex) {
                 throw new ElasticsearchIllegalArgumentException("The configured proxy port value [" + portString + "] is invalid", ex);
             }
             clientConfiguration.withProxyHost(proxyHost).setProxyPort(proxyPort);
@@ -110,15 +117,15 @@ public class AwsS3Service extends AbstractLifecycleComponent<AwsS3Service> {
         AWSCredentialsProvider credentials;
 
         if (account == null && key == null) {
-            credentials = new AWSCredentialsProviderChain(
-                    new EnvironmentVariableCredentialsProvider(),
-                    new SystemPropertiesCredentialsProvider(),
-                    new InstanceProfileCredentialsProvider()
-            );
-        } else {
-            credentials = new AWSCredentialsProviderChain(
-                    new StaticCredentialsProvider(new BasicAWSCredentials(account, key))
-            );
+            credentials = new DefaultAWSCredentialsProviderChain();
+            //            credentials = new AWSCredentialsProviderChain(
+            //                    new EnvironmentVariableCredentialsProvider(),
+            //                    new SystemPropertiesCredentialsProvider(),
+            //                    new InstanceProfileCredentialsProvider()
+            //            );
+        }
+        else {
+            credentials = new AWSCredentialsProviderChain(new StaticCredentialsProvider(new BasicAWSCredentials(account, key)));
         }
         client = new AmazonS3Client(credentials, clientConfiguration);
 
@@ -134,7 +141,8 @@ public class AwsS3Service extends AbstractLifecycleComponent<AwsS3Service> {
         if (componentSettings.get("s3.endpoint") != null) {
             endpoint = componentSettings.get("s3.endpoint");
             logger.debug("using explicit s3 endpoint [{}]", endpoint);
-        } else if (componentSettings.get("region") != null) {
+        }
+        else if (componentSettings.get("region") != null) {
             String region = componentSettings.get("region").toLowerCase();
             endpoint = getEndpoint(region);
             logger.debug("using s3 region [{}], with endpoint [{}]", region, endpoint);
@@ -145,44 +153,56 @@ public class AwsS3Service extends AbstractLifecycleComponent<AwsS3Service> {
     private static String getEndpoint(String region) {
         if ("us-east".equals(region)) {
             return "s3.amazonaws.com";
-        } else if ("us-east-1".equals(region)) {
+        }
+        else if ("us-east-1".equals(region)) {
             return "s3.amazonaws.com";
-        } else if ("us-west".equals(region)) {
+        }
+        else if ("us-west".equals(region)) {
             return "s3-us-west-1.amazonaws.com";
-        } else if ("us-west-1".equals(region)) {
+        }
+        else if ("us-west-1".equals(region)) {
             return "s3-us-west-1.amazonaws.com";
-        } else if ("us-west-2".equals(region)) {
+        }
+        else if ("us-west-2".equals(region)) {
             return "s3-us-west-2.amazonaws.com";
-        } else if ("ap-southeast".equals(region)) {
+        }
+        else if ("ap-southeast".equals(region)) {
             return "s3-ap-southeast-1.amazonaws.com";
-        } else if ("ap-southeast-1".equals(region)) {
+        }
+        else if ("ap-southeast-1".equals(region)) {
             return "s3-ap-southeast-1.amazonaws.com";
-        } else if ("ap-southeast-2".equals(region)) {
+        }
+        else if ("ap-southeast-2".equals(region)) {
             return "s3-ap-southeast-2.amazonaws.com";
-        } else if ("ap-northeast".equals(region)) {
+        }
+        else if ("ap-northeast".equals(region)) {
             return "s3-ap-northeast-1.amazonaws.com";
-        } else if ("ap-northeast-1".equals(region)) {
+        }
+        else if ("ap-northeast-1".equals(region)) {
             return "s3-ap-northeast-1.amazonaws.com";
-        } else if ("eu-west".equals(region)) {
+        }
+        else if ("eu-west".equals(region)) {
             return "s3-eu-west-1.amazonaws.com";
-        } else if ("eu-west-1".equals(region)) {
+        }
+        else if ("eu-west-1".equals(region)) {
             return "s3-eu-west-1.amazonaws.com";
-        } else if ("sa-east".equals(region)) {
+        }
+        else if ("sa-east".equals(region)) {
             return "s3-sa-east-1.amazonaws.com";
-        } else if ("sa-east-1".equals(region)) {
+        }
+        else if ("sa-east-1".equals(region)) {
             return "s3-sa-east-1.amazonaws.com";
-        } else {
+        }
+        else {
             throw new ElasticsearchIllegalArgumentException("No automatic endpoint could be derived from region [" + region + "]");
         }
     }
 
     @Override
-    protected void doStart() throws ElasticsearchException {
-    }
+    protected void doStart() throws ElasticsearchException {}
 
     @Override
-    protected void doStop() throws ElasticsearchException {
-    }
+    protected void doStop() throws ElasticsearchException {}
 
     @Override
     protected void doClose() throws ElasticsearchException {
