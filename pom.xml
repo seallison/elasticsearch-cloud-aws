@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.elasticsearch</groupId>
     <artifactId>elasticsearch-cloud-aws</artifactId>
-    <version>2.1.8</version>
+    <version>2.1.9</version>
     <packaging>jar</packaging>
     <name>Elasticsearch AWS cloud plugin</name>
     <description>The Amazon Web Service (AWS) Cloud plugin allows to use AWS API for the unicast discovery mechanism and add S3 repositories.</description>
@@ -83,8 +83,8 @@
 
         <dependency>
             <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk</artifactId>
-            <version>1.8.11</version>
+            <artifactId>aws-java-sdk-ec2</artifactId>
+            <version>1.9.3</version>
             <scope>compile</scope>
             <exclusions>
                 <!-- jackson is optional -->
@@ -103,12 +103,42 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>1.9.3</version>
+            <scope>compile</scope>
+            <exclusions>
+               <!-- jackson is optional -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.3.5</version> <!-- Have to match plugin version -->
+            <scope>compile</scope>
+        </dependency>
+        
+        
         <!-- We need to explicitly set the common codec version since aws-java-sdk pulls the wrong version -->
         <!-- See https://github.com/elasticsearch/elasticsearch-cloud-aws/issues/29 -->
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.4</version>
+            <version>1.6</version> <!-- Have to match plugin version -->
         </dependency>
 
         <dependency>
@@ -282,6 +312,25 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- TODO rpm packaging for cloud-aws plugin -->
+            <!--
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>rpm-maven-plugin</artifactId>
+                <version>2.1</version>
+                <executions>
+                    <execution>
+                        <id>generate-rpm</id>
+                        <goals>
+                            <goal>rpm</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <prefix></prefix>
+                </configuration>
+            </plugin>
+            -->
         </plugins>
     </build>
 </project>
